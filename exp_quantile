@@ -2,8 +2,9 @@
 #
 # Evaluates the 'expected quantile' of a p value for a 'principal' phenotype i given at least a given p value for a second 'conditional' phenotype j and a number of shared controls between the two phenotypes.
 #
+# We assume that Z values for SNPs at each phenotype are random variables, with Zi distributed as N(0,1) if the SNP is not associated with phenotype i.
 #
-# Evaluates P(Pi<pi|Pj<pj,H0(i)), where pi is an observed p value for the principal phenotype, pj is an observed p value for the conditional phenotype, and H0(i) is the hypothesis Zi~N(0,1). 
+# Evaluates P(Pi<pi|Pj<pj,H0(i)), where pi is an observed p value for the principal phenotype, pj is an observed p value for the conditional phenotype, and H0(i) is the hypothesis Zi~N(0,1).
 #
 # Can do this assuming a mixture distribution for (Zi,Zj) or by specifying an empirical distribution.
 #
@@ -12,8 +13,8 @@
 #  pc: observed p value or set of p values for conditional phenotype. Must be of the same length as p.
 #  rho: correlation between z values
 #  method: 1 to assume Zj has a mixed distribution characterised by pi0j, sigmaj; 2 to specify an empirical distribution. 
-#  pi0j: relevant only if method == 1. Parameter for distribution of gamma. 
-#  sigma: relevant only if method == 1. Parameter for distribution of gamma
+#  pi0j: relevant only if method == 1. Parameter for distribution of Zj. 
+#  sigma: relevant only if method == 1. Parameter for distribution of Zj
 #  prior: relevant only if method == 2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
 #
 # Outputs
