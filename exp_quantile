@@ -1,0 +1,50 @@
+############# Expected quantile ######################
+#
+# Evaluates the 'expected quantile' of a p value for a phenotype given at least a given p value for a second phenotype and a number of shared controls between the two phenotypes.
+#
+#
+# Evaluates P(Pi<pi|Pj<pj,H0(i)), where pi is an observed p value for the principal phenotype, pj is an observed p value for the conditional phenotype, and H0(i) is the hypothesis Zi~N(0,1). 
+#
+# Can do this assuming a mixture distribution for (Zi,Zj) or by specifying an empirical distribution.
+#
+# Inputs
+#  p: observed p value or set of p values for principal phenotype
+#  pc: observed p value or set of p values for conditional phenotype. Must be of the same length as p.
+#  rho: correlation between z values
+#  method: 1 to assume gamma has a mixed distribution, 2 to specify an empirical distribution. 
+#  pi0j: parameter for distribution of gamma
+#  sigma: parameter for distribution of gamma
+#  prior: relevant only if method=2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
+#
+# Outputs
+#  exp_quantile: a list of probabilities of the same length as p.
+
+exp_quantile = function(p,pc,rho,method=1,pi0j=0.9,sigmaj=3,prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
+
+z = -qnorm(p/2)
+zc = -qnorm(pc/2);
+
+if (method==1) {
+ num = (pi0j*pbivnorm(-z,-zc,rho=rho)) + (pi0j*pbivnorm(-z,-zc,rho=-rho)) + ((1-pi0j)*pbivnorm(-z,-zc/sqrt(1+(sigmaj^2)),rho=rho/sqrt(1+(sigmaj^2)))) +  ((1-pi0j)*pbivnorm(-z,-zc/sqrt(1+(sigmaj^2)),rho=-rho/sqrt(1+(sigmaj^2))))
+ denom = (pi0j*pnorm(-zc)) + (1-pi0j)*pnorm(-zc/sqrt(1+(sigmaj^2)))
+ return(num/denom)
+}
+if (method==2) {
+ num = matrix(0,length(z), dim(prior)[2]); denom=num
+ for (i in 1:dim(prior)[2]) {
+  num[,i] = pbivnorm(-z,-zc-prior[1,i],rho=rho) + pbivnorm(-z,-zc+prior[1,i],rho=rho) + pbivnorm(-z,-zc-prior[1,i],rho=-rho) + pbivnorm(-z,-zc+prior[1,i],rho=-rho)
+  denom[,i] = pnorm(-zc-prior[1,i]) + pnorm(-zc+prior[1,i])
+  }
+ num_null = (pbivnorm(-z,-zc,rho=rho) + pbivnorm(-z,-zc,rho=-rho)); denom_null = pnorm(-zc)
+ num_nonnull = trap(prior[1,],num[1,]*prior[2,]); denom_nonnull = (trap(prior[1,],denom[1,]*prior[2,]))
+ return(((pi0j*num_null) + ((1-pi0j)*(num_nonnull)))/((pi0j*denom_null) + ((1-pi0j)*(denom_nonnull))))
+}
+}
+
+
+# Trapezoid rule
+
+trap = function(x,y) {
+0.5*((c(x,0)-c(0,x))[2:(length(x))] %*% (c(y,0)+c(0,y))[2:(length(y))])
+}
+
