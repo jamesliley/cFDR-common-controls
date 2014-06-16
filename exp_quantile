@@ -22,6 +22,8 @@
 
 exp_quantile = function(p,pc,rho,method=1,pi0j=0.9,sigmaj=3,prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
 
+require(pbivnorm)
+
 z = -qnorm(p/2)
 zc = -qnorm(pc/2);
 
