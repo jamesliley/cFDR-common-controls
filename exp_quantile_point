@@ -1,0 +1,36 @@
+############# Expected quantile for specific pj ######################
+#
+# Evaluates the 'expected quantile' of a p value for a 'principal' phenotype i given an exact p value for a second 'conditional' phenotype j and a number of shared controls between the two phenotypes.
+#
+# We assume that Z values for SNPs at each phenotype are random variables, with Zi distributed as N(0,1) if the SNP is not associated with phenotype i.
+#
+# Evaluates P(Pi<pi|Pj=pj,H0(i)), where pi is an observed p value for the principal phenotype, pj is an observed p value for the conditional phenotype, and H0(i) is the hypothesis Zi~N(0,1).
+#
+# For the moment, requires assumption of a mixture distribution for (Zi,Zj).
+#
+# Inputs
+#  p: observed p value or set of p values for principal phenotype
+#  pc: observed p value or set of p values for conditional phenotype. Must be of the same length as p.
+#  rho: correlation between z values
+#  method: 1 to assume Zj has a mixed distribution characterised by pi0j, sigmaj; 2 to specify an empirical distribution. 
+#  pi0j: Parameter for distribution of Zj. 
+#  sigma: Parameter for distribution of Zj
+#
+# Outputs
+#  exp_quantile: a list of probabilities of the same length as p.
+
+
+exp_quantile_point = function(p,pc,rho,pi0j=1,sigmaj=1) {
+
+z = -qnorm(p/2)
+zc = -qnorm(pc/2);
+
+ num = (dnorm(-zc)*pi0j*
+   (pnorm(-z,mean = -rho*zc,sd = sqrt(1-(rho^2)))+pnorm(-z,mean = rho*zc,sd = sqrt(1-(rho^2))))) + 
+  (dnorm(-zc,sd = sqrt(1+(sigmaj^2)))*(1-pi0j)*
+   (pnorm(-z,mean = -rho*zc/sqrt(1+(sigmaj^2)),sd = sqrt(1-(rho^2)+(sigmaj^2))/sqrt(1+(sigmaj^2))) +
+    pnorm(-z,mean = rho*zc/sqrt(1+(sigmaj^2)),sd = sqrt(1-(rho^2)+(sigmaj^2))/sqrt(1+(sigmaj^2)))))
+ denom = ((pi0j*dnorm(-zc)) + (1-pi0j)*dnorm(-zc,sd = sqrt(1+(sigmaj^2))))
+
+return(num/denom)
+}
