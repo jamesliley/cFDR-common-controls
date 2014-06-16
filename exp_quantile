@@ -12,9 +12,9 @@
 #  pc: observed p value or set of p values for conditional phenotype. Must be of the same length as p.
 #  rho: correlation between z values
 #  method: 1 to assume gamma has a mixed distribution, 2 to specify an empirical distribution. 
-#  pi0j: parameter for distribution of gamma
-#  sigma: parameter for distribution of gamma
-#  prior: relevant only if method=2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
+#  pi0j: relevant only if method == 1. Parameter for distribution of gamma. 
+#  sigma: relevant only if method == 1. Parameter for distribution of gamma
+#  prior: relevant only if method == 2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
 #
 # Outputs
 #  exp_quantile: a list of probabilities of the same length as p.
