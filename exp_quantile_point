@@ -22,6 +22,8 @@
 
 exp_quantile_point = function(p,pc,rho,pi0j=1,sigmaj=1) {
 
+require(pbivnorm)
+
 z = -qnorm(p/2)
 zc = -qnorm(pc/2);
 
