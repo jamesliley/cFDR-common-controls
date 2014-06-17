@@ -23,7 +23,9 @@ f_n = fit.em(z,maxit=200)
 pi0 = f_n$pars[1]
 sigma = sqrt(f_n$pars[2])
 
-cfdr_base(p_vals,rho,method=1,pi0j=pi0,sigmaj=sigma0)
+ww = which(!is.na(p_vals[,1]+p_vals[,2]))
+
+cfdr_base(p_vals[ww,],rho,method=1,pi0j=pi0,sigmaj=sigma0)
 }
 
 
