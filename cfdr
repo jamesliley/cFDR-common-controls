@@ -1,6 +1,6 @@
 ##### Pairwise conditional FDR ####################################
 #
-# Computes conditional false discovery rate for a set of p value pairs from two GWAS, allowing for potential sharing of controls between the two studies.
+# Computes conditional false discovery rate for a set of p value pairs from two GWAS, allowing for potential sharing of controls between the two studies. Does not estimate parameters for distribution of conditional effect sizes.
 #
 # Inputs
 #  p_vals_ij: array of dimensions (# SNPs) x 2. Entry [i,1] is p value for principal phenotype for ith SNP; entry [i,2] is p value for conditional phenotype at ith SNP.
@@ -12,7 +12,7 @@
 # Outputs
 #  f_i: f_i[i] = FDR(p_i|p_j)
 
-cfdr = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
+cfdr_base = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
 
 # Covariance between z values for i and j  
 #N1=n_casesij[1]; N2=n_casesij[2]; N0=overlap; N01 = n_controlsij[1]-N0; N02=n_controlsij[2]-N0
