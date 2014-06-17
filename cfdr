@@ -1,4 +1,38 @@
-##### Pairwise conditional FDR ####################################
+##### Pairwise conditional FDR ##################################
+#
+# Computes conditional FDR for a set of pairs of p values. Estimates parameters of distribution of effect sizes for the conditional phenotype.
+#
+# Inputs
+#  p_vals: an array of dimension n x 2; entry [i,1] is the p value for the ith SNP at the principal phenotype, [i,2] is the p value for the ith SNP at the jth phenotype.
+#  n_cases_p: number of cases in study for principal phenotype
+#  n_cases_c: number of cases in study for conditional phenotype
+#  n_controls_p: number of controls in study for principal phenotype
+#  n_controls_c: number of controls in study for conditional phenotype
+#  control_overlap: number of controls shared between studies
+#
+
+cfdr = function(p_vals,n_cases_p,n_cases_c,n_controls_p,n_controls_c,control_overlap=0) {
+
+N1=n_cases_p; N2=n_cases_c; N0=control_overlap; N01 = n_controls_p-N0; N02=n_controls_c-N0
+rho = sqrt(1/( (1+(N02/N0))*(1+(N01/N0))*(1+(N01/N1)+(N0/N1))*(1+(N02/N2)+(N0/N2)) ));
+
+w = which(!is.na(p_vals[,2]) & p_vals[,2]>0)
+z = -qnorm(p_vals[w,2]/2);
+z=z*sample(c(-1,1),length(w),replace=TRUE) # Randomly assign z values to be positive or negative.
+f_n = fit.em(z,maxit=200)
+pi0 = f_n$pars[1]
+sigma = sqrt(f_n$pars[2])
+
+cfdr_base(p_vals,rho,method=1,pi0j=pi0,sigmaj=sigma0)
+}
+
+
+
+
+
+
+
+##### Pairwise conditional FDR calculator #######################
 #
 # Computes conditional false discovery rate for a set of p value pairs from two GWAS, allowing for potential sharing of controls between the two studies. Does not estimate parameters for distribution of conditional effect sizes.
 #
