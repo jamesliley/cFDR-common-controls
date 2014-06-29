@@ -38,7 +38,7 @@
 ##' exp_quantile(p,pc,rho,method=1,pi0j=pi0,sigmaj=sigma)
 ##' # If rho=0 (no shared controls) z values for the two phenotypes are independent, and the expected quantile equals pc.
 
-exp_quantile = function(p,pc,rho,method=1,pi0j=0.9,sigmaj=3,prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
+exp_quantile = function(p,pc,rho,method=1,pi0j=1,sigmaj=0,prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
 
 require(pbivnorm)
 
