@@ -1,0 +1,44 @@
+##' Compute correlation between z values arising from shared controls
+##'
+##' Utilises a formula from Zaykin et al (2010)
+##'
+##' @title cor_shared
+##' @param n0i Number of controls in GWAS for phenotype i
+##' @param n0j Number of controls in GWAS for phenotype j
+##' @param n1i Number of cases in GWAS for phenotype i
+##' @param n1j Number of cases in GWAS for phenotype j
+##' @param overlap Number of controls shared between studies
+##' @return Asymptotic correlation between z scores.
+##' @export
+##' @author James Liley
+##' @examples
+##'
+##' n0i = 1500; n0j = 1200; n1i = 800; n1j = 700;
+##' overlap = 1000;
+##' cor_shared(n0i,n0j,n1i,n1j,overlap)
+##'
+##'
+##' # Simulation - heavy memory usage
+##' n_snps = 10000; sim_maf = runif(n_snps,min=0.1,max=0.5) # simulated MAF
+##' sim_con_i = matrix(runif(n_snps*n0i),n_snps,n0i)<sim_maf # simulated genotypes for controls for phenotype i
+##' sim_con_j = matrix(runif(n_snps*n0j),n_snps,n0j)<sim_maf; sim_con_j[,1:overlap]=sim_con_i[,1:overlap] # simulated genotypes for controls for phenotype j, with shared controls
+##' sim_case_i = matrix(runif(n_snps*n1i),n_snps,n1i)<sim_maf; sim_case_j = matrix(runif(n_snps*n1j),n_snps,n1j)<sim_maf # simulated genotypes for cases
+##' om0i=rowMeans(sim_con_i); om0j=rowMeans(sim_con_j); om1i = rowMeans(sim_case_i); om1j = rowMeans(sim_case_j) # observed minor allele frequencies
+##' or_i = om0i*(1-om1i)/(om1i*(1-om0i)); or_j = om0j*(1-om1j)/(om1j*(1-om0j)) # Odds ratios
+##' se_i = sqrt( (1/(2*om0i*n0i)) + (1/(2*(1-om0i)*n0i)) + (1/(2*om1i*n1i)) + (1/(2*(1-om1i)*n1i)) )
+##' se_j = sqrt( (1/(2*om0j*n0j)) + (1/(2*(1-om0j)*n0j)) + (1/(2*om1j*n1j)) + (1/(2*(1-om1j)*n1j)) ) # Standard errors
+##' effect_i = log(or_i)/se_i; effect_j = log(or_j)/se_j # Effect sizes
+##' 
+##' cor(effect_i,effect_j)
+##' cor_shared(n0i,n0j,n1i,n1j,overlap)
+##' 
+##' cor(abs(effect_i),abs(effect_j))
+##' cor_shared(n0i,n0j,n1i,n1j,overlap)^2
+
+cor_shared = function(n_controls1, n_controls2, overlap, n_cases1, n_cases2) {
+
+N01 = n0i-N0; N02=n0j-N0
+sqrt(1/( (1+(N02/overlap))*(1+(N01/overlap))*(1+(N01/n1i)+(overlap/n1i))*(1+(N02/n1j)+(overlap/n1j)) ));
+
+}
+
