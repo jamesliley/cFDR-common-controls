@@ -1,6 +1,6 @@
 ##' Evaluate the conditional expected quantile of a p value in the shared control design conditional on a p value bound for a second phenotype
 ##'
-##' Computes the probability that a p value for a phenotype i is less than some cutoff p_i given that the p value for a second phenotype j is less than a cutoff p_j, under the null hypothesis for phenotype i.
+##' Computes the probability that a p value for a phenotype i is less than some cutoff 'p' given that the p value for a second phenotype j is less than a cutoff 'pc', under the null hypothesis for phenotype i.
 ##'
 ##' If the GWAS for phenotypes i and j share a number of controls, effect sizes for the two phenotypes will be correlated, even at null SNPs. This entails that the expected quantile depends both on the number of shared controls, through a paramter 'rho', and the distribution of z values for phenotype j across all SNPs, not all of which will be null for j.
 ##'
@@ -13,8 +13,8 @@
 ##' @param pc Observed p value or set of p values for conditional phenotype. Must be of the same length as p.
 ##' @param rho Correlation between z values induced by shared controls
 ##' @param  method; Set to 1 to assume Zj has a mixed distribution characterised by pi0j, sigmaj; 2 to specify an empirical distribution. 
-##' @param pi0j Relevant only if method == 1. Parameter for distribution of Zj. 
-##' @param sigmaj Relevant only if method == 1. Parameter for distribution of Zj
+##' @param pi0j Relevant only if method == 1. Parameter for distribution of Zj. Proportion of SNPs null for phenotype j.
+##' @param sigmaj Relevant only if method == 1. Parameter for distribution of Zj. Variance of true effect sizes for SNPs non-null for phenotype j.
 ##' @param prior Relevant only if method == 2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
 ##' @return A list of probabilities of the same length as p.
 ##' @export
