@@ -1,20 +1,37 @@
-##### Pairwise conditional FDR ##################################
-#
-# Computes conditional FDR for a set of pairs of p values. Estimates parameters of distribution of effect sizes for the conditional phenotype.
-#
-# Inputs
-#  p_vals: an array of dimension n x 2; entry [i,1] is the p value for the ith SNP at the principal phenotype, [i,2] is the p value for the ith SNP at the jth phenotype.
-#  n_cases_p: number of cases in study for principal phenotype
-#  n_cases_c: number of cases in study for conditional phenotype
-#  n_controls_p: number of controls in study for principal phenotype
-#  n_controls_c: number of controls in study for conditional phenotype
-#  control_overlap: number of controls shared between studies
-#
+##' Compute cFDR values from a set of pairs of p values
+##'
+##' Computes asymptotic correlation between z scores arising from shared controls and estimates parameters of distribution of effect sizes for the conditional phenotype.
+##'
+##' @title cfdr
+##' @param p_vals an array of dimension n x 2; entry [i,1] is the p value for the ith SNP at the principal phenotype, [i,2] is the p value for the ith SNP at the jth phenotype.
+##' @param n_controls_p number of controls in study for principal phenotype
+##' @param n_controls_c number of controls in study for conditional phenotype
+##' @param control_overlap number of controls shared between studies
+##' @param n_cases_p number of cases in study for principal phenotype
+##' @param n_cases_c number of cases in study for conditional phenotype
+##' @param all set to 1 to compute cfdr at all possible values; 0 false to only compute at values for which it will potentially be less than 0.1 (faster).
+##' @return list of length dim(p_vals)[1]; entry [i] is cFDR(p_vals[i,1]|p_vals[i,2]). If all=FALSE, then entry[i] is 1 if cFDR is likely to be greater than 0.1. Entry [i] is NA if one or both of the p values are missing.
+##' @export
+##' @author James Liley
+##' @examples
+##'
+##' require(mnormt)
+##' rho = cor_shared(1500,1200,1000,700,800)
+##' z_vals = rmnorm(10000,mean=c(0,0),varcov=rbind(c(1,rho),c(rho,1)))
+##' p_vals = pnorm(z_vals)
+##' cond_fdr = cfdr(p_vals,1500,1200,1000,700,800,all=TRUE)
+##'
+##' # Explicit computation
+##' p_vals[1,]
+##' (a=length(which(p_vals[,2]<=p_vals[1,2])))
+##' (b=length(which((p_vals[,1]<=p_vals[1,1]) & (p_vals[,2]<=p_vals[1,2]))))
+##' (c=exp_quantile(p_vals[1,1],p_vals[1,2],rho,pi0j=1,sigmaj=0))
+##' c*a/b
+##' cond_fdr[1]
 
-cfdr = function(p_vals,n_cases_p,n_cases_c,n_controls_p,n_controls_c,control_overlap=0) {
+cfdr = function(p_vals,n_controls_p,n_controls_c,control_overlap=0,n_cases_p,n_cases_c, all=FALSE) {
 
-N1=n_cases_p; N2=n_cases_c; N0=control_overlap; N01 = n_controls_p-N0; N02=n_controls_c-N0
-rho = sqrt(1/( (1+(N02/N0))*(1+(N01/N0))*(1+(N01/N1)+(N0/N1))*(1+(N02/N2)+(N0/N2)) ));
+rho = cor_shared(n_controls_p,n_controls_c,control_overlap,n_cases_p,n_cases_c)
 
 w = which(!is.na(p_vals[,2]) & p_vals[,2]>0)
 z = -qnorm(p_vals[w,2]/2);
@@ -25,7 +42,9 @@ sigma = sqrt(f_n$pars[2])
 
 ww = which(!is.na(p_vals[,1]+p_vals[,2]))
 
-cfdr_base(p_vals[ww,],rho,method=1,pi0j=pi0,sigmaj=sigma0)
+cond_fdr = rep(NA,dim(p_vals)[1])
+cond_fdr[ww]=cfdr_base(p_vals[ww,],rho,method=1,pi0j=pi0,sigmaj=sigma, all=all)
+return(cond_fdr)
 }
 
 
@@ -34,26 +53,30 @@ cfdr_base(p_vals[ww,],rho,method=1,pi0j=pi0,sigmaj=sigma0)
 
 
 
-##### Pairwise conditional FDR calculator #######################
-#
-# Computes conditional false discovery rate for a set of p value pairs from two GWAS, allowing for potential sharing of controls between the two studies. Does not estimate parameters for distribution of conditional effect sizes.
-#
-# Inputs
-#  p_vals_ij: array of dimensions (# SNPs) x 2. Entry [i,1] is p value for principal phenotype for ith SNP; entry [i,2] is p value for conditional phenotype at ith SNP.
-#  rho: expected correlation between z values
-#  method: 1 to assume Zj has a mixed distribution characterised by pi0j, sigmaj; 2 to specify an empirical distribution. 
-#  pi0j: relevant only if method == 1. Parameter for distribution of Zj. 
-#  sigma: relevant only if method == 1. Parameter for distribution of Zj.
-#  prior: relevant only if method == 2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
-# Outputs
-#  f_i: f_i[i] = FDR(p_i|p_j)
+##' Compute cFDR values from a set of pairs of p values
+##'
+##' Assumes a distribution of z values for conditional phenotype distributed as 0 with probability pi0j, N(0,sigmaj^2) with probability 1-pi0j. 
+##'
+##' @title cfdr
+##' @param p_vals an array of dimension n x 2; entry [i,1] is the p value for the ith SNP at the principal phenotype, [i,2] is the p value for the ith SNP at the jth phenotype.
+##' @param rho correlation between z values arising from shared controls
+##' @param  method Passed to exp_quantile. Set to 1 to assume Zj has a mixed distribution characterised by pi0j, sigmaj; 2 to specify an empirical distribution. 
+##' @param pi0j Passed to exp_quantile. Relevant only if method == 1. Parameter for distribution of Zj. 
+##' @param sigmaj Passed to exp_quantile. Relevant only if method == 1. Parameter for distribution of Zj
+##' @param prior Passed to exp_quantile. Relevant only if method == 2. Matrix with two rows; first is a list of potential values for Zj, second is a list of probabilities associated with those values.
+##' @param all set to 1 to compute cfdr at all possible values; 0 false to only compute at values for which it will potentially be less than 0.1 (faster).
+##' @return Array of dimensions n x 2; entry [i,1] is cFDR(p_vals[i,1]|p_vals[i,2]); entry [i,2] is cFDR(p_vals[i,2]|p_vals[i,1]) 
+##' @export
+##' @author James Liley
+##' @examples
+##'
+##' # See examples for function cfdr.
 
-cfdr_base = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
+cfdr_base = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3)),all=FALSE) {
 
-# Covariance between z values for i and j  
-#N1=n_casesij[1]; N2=n_casesij[2]; N0=overlap; N01 = n_controlsij[1]-N0; N02=n_controlsij[2]-N0
-#rho = sqrt(1/( (1+(N02/N0))*(1+(N01/N0))*(1+(N01/N1)+(N0/N1))*(1+(N02/N2)+(N0/N2)) ));
+f_i = rep(0,dim(p_vals_ij)[1])
 
+if (! all) {
 # Compute cutoff c_i
 p_i = p_vals_ij[,1]; p_j = p_vals_ij[,2];
 ord=order(p_i); cdf=(1:length(ord))/length(ord) # Quantiles of ordered list of p values
@@ -61,16 +84,19 @@ p_i = p_i[ord];
 fdr1 = p_i/cdf;
 c_i = p_i[min(which(fdr1>0.1))]
 
-r1 = which(log(p_vals_ij[,1])+log(p_vals_ij[,2])<2*log(c_i)) # values not in triangle (p_i,p_j<1; -log10(p_i) + -log10(p_j) <-log10(c_i))
+r1 = which(log(p_vals_ij[,1])+log(p_vals_ij[,2])<0.5*log(c_i)) # values not in triangle (p_i,p_j<1; -log10(p_i) + -log10(p_j) <-log10(c_i))
 r2 = which(p_vals_ij[,1]<(10^-0.75)) # 
 #r3 = which(p_vals_ij[,1]>(10^-12)) # SNPs with values lower than this 
 r = intersect(r1,r2) # intersect(intersect(r1,r2),r3) # Values with ambiguous FDR
 
-f_i = rep(0,dim(p_vals_ij)[1])
-all = 1:length(f_i);
-f_i[setdiff(all,r1)]=1; # approximately
-f_i[setdiff(all,r2)]=1; # approximately
-#f_i[setdiff(all,r3)]=0;
+total = 1:length(f_i);
+f_i[setdiff(total,r1)]=1; # approximately
+f_i[setdiff(total,r2)]=1; # approximately
+#f_i[setdiff(total,r3)]=0;
+
+} else {
+r = 1:dim(p_vals_ij)[1]
+}
 
 p_i = p_vals_ij[,1]; # Remaining points
 p_j = p_vals_ij[,2];
@@ -102,5 +128,3 @@ f_i[r]=exp_quantile(p_vals_ij[r,1],p_vals_ij[r,2],rho,method=method,pi0j=pi0j,si
 
 return(f_i)
 }
-
-
