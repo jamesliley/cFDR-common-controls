@@ -37,6 +37,11 @@
 ##' rho <- 0
 ##' exp_quantile(p,pc,rho,method=1,pi0j=pi0,sigmaj=sigma)
 ##' # If rho=0 (no shared controls) z values for the two phenotypes are independent, and the expected quantile equals pc.
+##'
+##' p3 = rbind((-500:500)/20, dnorm((-500:500)/20,sd=3))
+##' exp_quantile(5e-4,5e-3,0.3,method=2,pi0j=0.9,prior=p3)
+##' exp_quantile(5e-4,5e-3,0.3,method=1,pi0j=0.9,sigmaj=3)
+##' # Demonstrates specification of a prior.
 
 exp_quantile = function(p,pc,rho,method=1,pi0j=0.9,sigmaj=3,prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3))) {
 
@@ -51,12 +56,13 @@ if (method==1) {
  return(num/denom)
 }
 if (method==2) {
+ prior[,2]=prior[,2]/(trap(prior[,1],prior[,2]))
  num = matrix(0,length(z), dim(prior)[2]); denom=num;
  for (i in 1:dim(prior)[2]) {
   num[,i] = pbivnorm(-z,-zc-prior[1,i],rho=rho) + pbivnorm(-z,-zc+prior[1,i],rho=rho) + pbivnorm(-z,-zc-prior[1,i],rho=-rho) + pbivnorm(-z,-zc+prior[1,i],rho=-rho)
   denom[,i] = pnorm(-zc-prior[1,i]) + pnorm(-zc+prior[1,i])
   }
- num_null = (pbivnorm(-z,-zc,rho=rho) + pbivnorm(-z,-zc,rho=-rho)); denom_null = pnorm(-zc); 
+ num_null = 2*((pbivnorm(-z,-zc,rho=rho) + pbivnorm(-z,-zc,rho=-rho))); denom_null = 2*pnorm(-zc); 
  num_nonnull=num_null; denom_nonnull=denom_null; # initialise
  for (i in 1:length(z)) {
   num_nonnull[i] = trap(prior[1,],num[i,]*prior[2,]); 
