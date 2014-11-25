@@ -169,7 +169,7 @@ return(f_i)
 
 cor_shared = function(n0i, n0j, overlap, n1i, n1j) {
 
-N01 = n0i-N0; N02=n0j-N0
+N01 = n0i-overlap; N02=n0j-overlap
 sqrt(1/( (1+(N02/overlap))*(1+(N01/overlap))*(1+(N01/n1i)+(overlap/n1i))*(1+(N02/n1j)+(overlap/n1j)) ));
 
 }
