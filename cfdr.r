@@ -1,60 +1,5 @@
 ##' Compute cFDR values from a set of pairs of p values
 ##'
-##' Computes asymptotic correlation between z scores arising from shared controls and estimates parameters of distribution of effect sizes for the conditional phenotype.
-##'
-##' @title cfdr
-##' @param p_vals an array of dimension n x 2; entry [i,1] is the p value for the ith SNP at the principal phenotype, [i,2] is the p value for the ith SNP at the jth phenotype.
-##' @param n_controls_p number of controls in study for principal phenotype
-##' @param n_controls_c number of controls in study for conditional phenotype
-##' @param control_overlap number of controls shared between studies
-##' @param n_cases_p number of cases in study for principal phenotype
-##' @param n_cases_c number of cases in study for conditional phenotype
-##' @param all set to 1 to compute cfdr at all possible values; 0 false to only compute at values for which it will potentially be less than 0.1 (faster).
-##' @return list of length dim(p_vals)[1]; entry [i] is cFDR(p_vals[i,1]|p_vals[i,2]). If all=FALSE, then entry[i] is 1 if cFDR is likely to be greater than 0.1. Entry [i] is NA if one or both of the p values are missing.
-##' @export
-##' @author James Liley
-##' @examples
-##'
-##' require(mnormt)
-##' rho = cor_shared(1500,1200,1000,700,800)
-##' z_vals = rmnorm(10000,mean=c(0,0),varcov=rbind(c(1,rho),c(rho,1)))
-##' p_vals = pnorm(z_vals)
-##' cond_fdr = cfdr(p_vals,1500,1200,1000,700,800,all=TRUE)
-##'
-##' # Explicit computation
-##' p_vals[1,]
-##' (a=length(which(p_vals[,2]<=p_vals[1,2])))
-##' (b=length(which((p_vals[,1]<=p_vals[1,1]) & (p_vals[,2]<=p_vals[1,2]))))
-##' (c=exp_quantile(p_vals[1,1],p_vals[1,2],rho,pi0j=1,sigmaj=0))
-##' c*a/b
-##' cond_fdr[1]
-
-cfdr = function(p_vals,n_controls_p,n_controls_c,control_overlap=0,n_cases_p,n_cases_c, all=FALSE) {
-
-rho = cor_shared(n_controls_p,n_controls_c,control_overlap,n_cases_p,n_cases_c)
-
-w = which(!is.na(p_vals[,2]) & p_vals[,2]>0)
-z = -qnorm(p_vals[w,2]/2);
-z=z*sample(c(-1,1),length(w),replace=TRUE) # Randomly assign z values to be positive or negative.
-f_n = fit.em(z,maxit=200)
-pi0 = f_n$pars[1]
-sigma = sqrt(f_n$pars[2])
-
-ww = which(!is.na(p_vals[,1]+p_vals[,2]))
-
-cond_fdr = rep(NA,dim(p_vals)[1])
-cond_fdr[ww]=cfdr_base(p_vals[ww,],rho,method=1,pi0j=pi0,sigmaj=sigma, all=all)
-return(cond_fdr)
-}
-
-
-
-
-
-
-
-##' Compute cFDR values from a set of pairs of p values
-##'
 ##' Assumes a distribution of z values for conditional phenotype distributed as 0 with probability pi0j, N(0,sigmaj^2) with probability 1-pi0j. 
 ##'
 ##' @title cfdr
@@ -69,9 +14,27 @@ return(cond_fdr)
 ##' @export
 ##' @author James Liley
 ##' @examples
+##' require(mnormt)
+##' rho = cor_shared(1500,1200,1000,700,800)
+##' z_vals = rmnorm(10000,mean=c(0,0),varcov=rbind(c(1,rho),c(rho,1)))
+##' p_vals = 2*pnorm(-abs(z_vals))
 ##'
-##' # See examples for function cfdr.
-cfdr_base = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3)),all=FALSE) {
+##' rec_z = -qnorm(p_vals/2) # Recovered z values
+##' f_n = fit.em(c(rec_z,-rec_z))
+##' pi0 = f_n$pars[1]; sigma=sqrt(f_n$pars[2]) 
+##'
+##'
+##' cond_fdr = cfdr(p_vals,rho, method=1, pi0j=pi0,sigmaj=sigma)
+##' 
+##' # Explicit computation
+##' p_vals[1,]
+##' (a=length(which(p_vals[,2]<=p_vals[1,2])))
+##' (b=length(which((p_vals[,1]<=p_vals[1,1]) & (p_vals[,2]<=p_vals[1,2]))))
+##' (c=exp_quantile(p_vals[1,1],p_vals[1,2],rho,pi0j=pi0,sigmaj=sigma))
+##' c*a/b
+##' cond_fdr[1]
+
+cfdr = function(p_vals_ij,rho,method=1, pi0j = 1, sigmaj = 1, prior = rbind((1:10)/10,dnorm((1:10)/10,sd=3)),all=FALSE) {
 
 f_i = rep(0,dim(p_vals_ij)[1])
 
