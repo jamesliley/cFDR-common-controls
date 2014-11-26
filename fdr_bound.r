@@ -17,7 +17,27 @@
 ##' @export
 ##' @author James Liley
 ##' @examples
+##' # Set up example cfdr and p values
+##' require(mnormt)
+##' rho = cor_shared(1500,1200,1000,700,800)
+##' z_vals = rmnorm(10000,mean=c(0,0),varcov=rbind(c(1,rho),c(rho,1)))
+##' p_vals = 2*pnorm(-abs(z_vals))
 ##'
+##' rec_z = -qnorm(p_vals/2) # Recovered z values
+##' f_n = fit.em(c(rec_z,-rec_z))
+##' pi0 = f_n$pars[1]; sigma=sqrt(f_n$pars[2]) 
+##'
+##'
+##' cond_fdr = cfdr(p_vals,rho, method=1, pi0j=pi0,sigmaj=sigma)
+##' 
+##' # Compute fdr associated with a cutoff of cfdr<1e-4
+##' 
+##' wn = which(p_vals[,2]>0.5);
+##' f_0 = fit.em(c(rec_z[wn],-rec_z[wn]))
+##' pi0_n = f_0$pars[1]; sigma_n = f_0$pars[2];
+##' 
+##' cut=1e-4;
+##' c2a(p_vals,cond_fdr,cut,rho,pi0_n,sigma_n)
  
 c2a=function(p_vals,cfdr,cutoff,rho,pi0_n,sigma_n) {
 w = which(!is.na(cfdr))
