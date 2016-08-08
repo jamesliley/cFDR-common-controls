@@ -1,0 +1,24 @@
+Package: cfdrCommonControl
+Type: Package
+Depends:
+    pbivnorm,
+    mnormt
+Suggests:
+    snpStats
+Title: Estimation of the Bayesian conditional false discovery rate (cFDR)
+    allowing shared controls
+Version: 1.1
+Date: 2015-11-30
+Authors@R: c(person("James", "Liley", role=c("aut","cre"), email =
+    "ajl88@cam.ac.uk"))
+Author: James Liley
+Maintainer: James Liley <ajl88@cam.ac.uk>
+Description: Computes the pleiotropy-informed Bayesian conditional false
+    discovery rate (cFDR) as described in Andreasson (2013) and Liley (2015)
+    allowing for sharing of controls between GWAS. Also computes the associated
+    false-discovery rate amongst SNPs for which cFDR is less than some cutoff.
+License: GPL
+LazyLoad: yes
+Collate:
+    'cFDR.R'
+RoxygenNote: 5.0.1
