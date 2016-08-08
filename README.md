@@ -7,6 +7,6 @@ Functions are also included to compute an upper bound on the overall false disco
 
 To load in R, type:
 
-`require("devtools")`
+`library("devtools")`
 
 `install_github("jamesliley/cFDR-common-controls")`
