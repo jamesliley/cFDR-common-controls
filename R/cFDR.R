@@ -56,8 +56,8 @@ cfdr = function(P_i,P_j,sub=1:length(P_i)) {
   # check sub, add warning
   
   
-  C=rep(NA,length(p_i))
-  wx=rep(0,length(p_i)); wx[sub]=1;
+  C=rep(NA,length(P_i))
+  wx=rep(0,length(P_i)); wx[sub]=1;
   
   ww=which(!is.na(P_i+P_j))
   P_i=P_i[ww]; P_j=P_j[ww]
