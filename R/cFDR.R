@@ -268,12 +268,6 @@ cor_shared = function(n0i, n0j, overlap, n1i, n1j) {
 
 
 
-
-
-
-
-
-
 ##' Compute an upper bound on the false discovery rate amongst SNPs with cFDR less than some cutoff \eqn{\alpha} .
 ##' 
 ##' Bound is based on estimating the area of the region of the unit square containing all potential p-value pairs \eqn{p_{i},p_{j}}{p_i,p_j} such that \eqn{\widehat{cFDR}(p_{i},p_{j}) \leq \alpha}{est. cFDR(p_i,p_j) \le \alpha}. It is typically conservative.
@@ -282,7 +276,8 @@ cor_shared = function(n0i, n0j, overlap, n1i, n1j) {
 ##' 
 ##' The probability is computed using a numerical integral over the (+/+) quadrant and the range and resolution of the integral can be set.
 ##' @title c2a
-##' @param Z n x 2 matrix of Z scores; Z[,1] corresponding to the principal phenotype, Z[,2] to the conditional phenotype
+##' @param P_i vector of p-values for the principal phenotype.
+##' @param P_j vector of p-values or adjusted p-values for the conditional phenotype. If controls are shared between GWAS, the p-values must be adjusted using the function \code{\link{exp_quantile}}.
 ##' @param cutoffs vector of cFDR cutoffs at which to compute overall FDR
 ##' @param pi0 proportion of SNPs not associated with conditional phenotype
 ##' @param sigma standard deviation of observed conditional Z scores in SNPs associated with the conditional phenotype
@@ -304,11 +299,14 @@ cor_shared = function(n0i, n0j, overlap, n1i, n1j) {
 ##' Xm=which(X<0.05); Xsub=Xm[order(runif(length(Xm)))[1:100]] # sample of cFDR values 
 ##' 
 ##' true_fdr=rep(0,100); for (i in 1:100) true_fdr[i]=length(which(X[1:(0.95*nn)] <= X[Xsub[i]]))/length(which(X<=X[Xsub[i]])) # true FDR values (empirical)
-##' fdr=c2a(Z,X[Xsub],pi0=0.95,sigma=2) # estimated FDR using area method
+##' fdr=c2a(P[,1],P[,2],X[Xsub],pi0=0.95,sigma=2) # estimated FDR using area method
 ##' 
 ##' plot(true_fdr,fdr,xlab="True FDR",ylab="Estimated",col="red"); points(true_fdr,X[Xsub],col="blue"); abline(0,1); legend(0.1*max(true_fdr),0.7*max(fdr),c("Area method", "cFDR"),col=c("red", "blue"),pch=c(1,1)) # cFDR underestimates true FDR; area method gives good approximation.
 ##'
-c2a=function(Z,cutoffs,pi0=0.5,sigma=1,rho=0,xmax=12,ymax=12,res=0.01) {
+c2a=function(P_i,P_j,cutoffs,pi0=0.5,sigma=1,rho=0,xmax=12,ymax=12,res=0.01) {
+
+  if (!is.numeric(P_i) | !is.numeric(P_j) || (max(P_i,na.rm=TRUE)>1) || (max(P_j,na.rm=TRUE)>1) || (min(P_i,na.rm=TRUE)<0) || (min(P_j, na.rm=TRUE)<0)) stop("Arguments P_i and P_j must both be vectors of p values or adjusted p values")
+  Z=-qnorm(cbind(P_i,P_j)/2)
   
   if (!is.numeric(pi0) | !is.numeric(sigma) || (pi0>1) | (pi0<0) | (sigma<0)) stop("Parameters pi0 and sigma must be set; pi0 must be in [0,1] and sigma must be non-negative. ")
   
@@ -370,6 +368,8 @@ c2a=function(Z,cutoffs,pi0=0.5,sigma=1,rho=0,xmax=12,ymax=12,res=0.01) {
 ##' fit$history
 fit.em <- function(Z,pi0_init=0.9,sigma_init=1,tol=1e-4,verbose=TRUE,maxit=1e4) {
   
+  Z=Z[which(is.finite(Z))]
+  
   ## probabilities of group0, group1 membership
   p <- c(pi0_init,1-pi0_init)
   px <- matrix(p,length(Z),2,byrow=TRUE)
@@ -418,6 +418,49 @@ fit.em <- function(Z,pi0_init=0.9,sigma_init=1,tol=1e-4,verbose=TRUE,maxit=1e4) 
   }
   return(list(pi0=pars[1], sigma=sqrt(pars[2]^2 - 1),
               history=value[1:nit,]))
+}
+
+
+
+# Draw plot
+plotred=function(p_i,p_j,xmax=10,ymax=10,res=0.05,draw=TRUE,contour=TRUE,
+                 points=TRUE,block=2,legend=TRUE,col=heat.colors(100),
+                 xlp=0.7*xmax, ylp=0.6*ymax,...) {
+  
+  xl<<-seq(0,xmax,res); yl<<-seq(0,ymax,res)
+  mm=matrix(0,length(xl),length(yl))
+  
+  for (i in 1:dim(mm)[2]) {
+    ww=which(p_j < 10^(-yl[i]))
+    if (length(ww)>0) {
+      cfsub=(10^(-xl))/((1+ length(ww)*ecdf(p_i[ww])(10^(-xl)))/(1+length(ww)));
+      mm[,i]= cfsub
+    }else mm[,i]= 10^(-xl)
+  }
+  
+  mm[which(mm>1)]=1
+  cmat<<-mm
+  
+  if (draw) image(xl,yl,mm^(1/4),xaxs="i",yaxs="i",col=col,...)
+  if (contour) {
+    contour(xl,yl,mm,add=TRUE,col="darkgray",levels=10^(-((1:10)/3)))
+    cut=(5e-8) / ((1+length(which(p_i<5e-8)))/(1+length(p_j)))
+    contour(xl,yl,mm,add=TRUE,col="black",levels=cut)
+  }
+  if (points) {
+    l_i=-log10(p_i); l_j=-log10(p_j)
+    wxy=which(l_i+l_j > block)
+    points(l_i[wxy],l_j[wxy],cex=0.5,pch=16)
+    polygon(c(0,0,block),c(0,block,0),col="black")
+  }
+  if (legend) {
+    rect(xlp,ylp,xlp+0.15*xmax,ylp+0.3*ymax,col="white")
+    col_l=seq(0,1,length.out=length(col))^(1/4)
+    image(xlp + c(0.0375,0.0525)*xmax,ylp+seq(0.03*ymax,0.23*ymax,length.out=length(col)),
+          as.matrix(rbind(col_l,col_l)),add=TRUE); 
+    rect(xlp+0.03*xmax,ylp+0.03*ymax,xlp+ 0.06*xmax,ylp + 0.23*ymax)
+    for (i in seq(0,1,length.out=6)) text(xlp+0.1*xmax,ylp+ (0.03+ (0.2*i))*ymax,round(i,digits=1))
+  }
 }
 
 
