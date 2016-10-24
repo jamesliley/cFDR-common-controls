@@ -4,11 +4,13 @@
 \alias{c2a}
 \title{c2a}
 \usage{
-c2a(Z, cutoffs, pi0 = 0.5, sigma = 1, rho = 0, xmax = 12, ymax = 12,
-  res = 0.01)
+c2a(P_i, P_j, cutoffs, pi0 = 0.5, sigma = 1, rho = 0, xmax = 12,
+  ymax = 12, res = 0.01)
 }
 \arguments{
-\item{Z}{n x 2 matrix of Z scores; Z[,1] corresponding to the principal phenotype, Z[,2] to the conditional phenotype}
+\item{P_i}{vector of p-values for the principal phenotype.}
+
+\item{P_j}{vector of p-values or adjusted p-values for the conditional phenotype. If controls are shared between GWAS, the p-values must be adjusted using the function \code{\link{exp_quantile}}.}
 
 \item{cutoffs}{vector of cFDR cutoffs at which to compute overall FDR}
 
@@ -49,7 +51,7 @@ X=cfdr(P[,1],P[,2],sub=which(Z[,1]^2 + Z[,2]^2 > 6))
 Xm=which(X<0.05); Xsub=Xm[order(runif(length(Xm)))[1:100]] # sample of cFDR values 
 
 true_fdr=rep(0,100); for (i in 1:100) true_fdr[i]=length(which(X[1:(0.95*nn)] <= X[Xsub[i]]))/length(which(X<=X[Xsub[i]])) # true FDR values (empirical)
-fdr=c2a(Z,X[Xsub],pi0=0.95,sigma=2) # estimated FDR using area method
+fdr=c2a(P[,1],P[,2],X[Xsub],pi0=0.95,sigma=2) # estimated FDR using area method
 
 plot(true_fdr,fdr,xlab="True FDR",ylab="Estimated",col="red"); points(true_fdr,X[Xsub],col="blue"); abline(0,1); legend(0.1*max(true_fdr),0.7*max(fdr),c("Area method", "cFDR"),col=c("red", "blue"),pch=c(1,1)) # cFDR underestimates true FDR; area method gives good approximation.
 
